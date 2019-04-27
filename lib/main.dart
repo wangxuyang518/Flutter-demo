@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter1/TextFieldDemo.dart';
-import 'package:flutter1/model/TokenModel.dart';
-import 'package:flutter1/oadingDialog.dart';
-import 'package:flutter1/test.dart';
-import 'package:dio/dio.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter1/BlocLogin.dart';
+import 'package:flutter1/model/TokenModel.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rxdart/rxdart.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -37,6 +38,7 @@ class ParentWidgetState extends State<ParentWidget> {
   String userName = "";
   String passWord = "";
   String result = "显示请求结果";
+  BlocLogin mBlocLogin=new BlocLogin();
   @override
   Widget build(BuildContext context) {
     print("build");
@@ -102,7 +104,12 @@ class ParentWidgetState extends State<ParentWidget> {
                     padding: EdgeInsets.fromLTRB(60, 20, 60, 0),
                     child: RaisedButton(
                       onPressed: () {
-                        request(context);
+                          Map<String,String> m={
+                     "username": userName,
+                       "password": passWord,
+                      "grant_type": "password"
+                          };
+                          mBlocLogin.login(m);
                       },
                       highlightColor: Color(0xFF1565C0),
                       color: Color(0xFF42A5F5),
@@ -118,56 +125,93 @@ class ParentWidgetState extends State<ParentWidget> {
                 )
               ],
             ),
-            Text(result)
+            StreamBuilder<String>(
+            stream: mBlocLogin.outStream,
+            initialData: "网络请求的数据结果",
+            builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+              return Text(
+                snapshot.data,
+                style:TextStyle(fontSize: 16),
+                
+              );
+            })
           ],
         ),
     );
   }
-
-  void showDialog1(BuildContext context) {
-    showDialog<Null>(
-        context: context, //BuildContext对象
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return new LoadingDialog(
-            //调用对话框
-            text: '正在登录...',
-          );
-        });
-  }
-
-  void request(BuildContext context) async {
-    showDialog1(context);
-    TokenModel token;
-    var params = {
-      "username": userName,
-      "password": passWord,
-      "grant_type": "password"
-    };
-    var header = {
-      "Authorization": "Basic d2ViQXBwOndlYkFwcA==",
-    };
-    await Dio()
-        .post("http://183.62.140.7:30099//zuul/api-auth/oauth/token",
-            queryParameters: params, options: Options(headers: header))
-        .then((Response r) {
-      if (r.statusCode == 200) {
-        token = TokenModel.fromJson(r.data);
-        if (token.accessToken != null) {
-          print(token.accessToken);
-        }
-      }
-    }).catchError(() {
-      print("异常");
-    }).whenComplete(() {
-      setState(() {
-        if (token.accessToken == null) {
-          result = "请求失败";
-        } else {
-          result = "token值" + token.accessToken;
-        }
-      });
-      Navigator.pop(context);
-    });
-  }
 }
+
+
+
+  // void request(BuildContext context) async {
+  //   showDialog1(context);
+  //   TokenModel token;
+  //   var params = {
+  //     "username": userName,
+  //     "password": passWord,
+  //     "grant_type": "password"
+  //   };
+  //   var header = {
+  //     "Authorization": "Basic d2ViQXBwOndlYkFwcA==",
+  //   };
+  //   await Dio()
+  //       .post<TokenModel>("http://183.62.140.7:30099//zuul/api-auth/oauth/token",
+  //           queryParameters: params, options: Options(headers: header))
+  //       .then((Response<TokenModel> r){
+  //     if (r.statusCode == 200) {
+  //       token = r.data;
+  //       if (token.accessToken != null) {
+  //         print(token.accessToken);
+  //       }
+  //     }
+  //   }).catchError(() {
+  //     print("异常");
+  //   }).whenComplete(() {
+  //     setState(() {
+  //       if (token.accessToken == null) {
+  //         result = "请求失败";
+  //       } else {
+  //         result = "token值" + token.accessToken;
+  //         saveTokenValue(token.accessToken);
+  //       }
+  //     });
+  //     Navigator.pop(context);
+  //   });
+  // }
+
+
+  // void requestStream(BuildContext context) async {
+  //   showDialog1(context);
+  //   var params = {
+  //     "username": userName,
+  //     "password": passWord,
+  //     "grant_type": "password"
+  //   };
+  //   var header = {
+  //     "Authorization": "Basic d2ViQXBwOndlYkFwcA==",
+  //   };
+    
+  //   Observable(Dio()
+  //       .post<TokenModel>("http://183.62.140.7:30099//zuul/api-auth/oauth/token",
+  //           queryParameters: params, options: Options(headers: header))
+  //           .asStream())
+  //           .flatMap((data){
+  //               return Observable.just(data.data);
+  //           }).listen((data){
+  //             print(data.accessToken);  
+  //           },onError: (){
+  //              print("error"); 
+  //           });
+          
+            
+ 
+       
+  // }
+
+
+
+  // saveTokenValue(String token) async{
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   prefs.setString("token", token);
+  //   print(prefs.getString("token"));
+  // }
