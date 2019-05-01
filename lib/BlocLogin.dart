@@ -5,12 +5,8 @@ import 'package:dio/dio.dart';
 
 
 class BlocLogin {
-
-
   StreamController<String>outStreamController=new StreamController<String>();
   Stream<String> get outStream =>outStreamController.stream;
-
-
 
   StreamController<Map>inStreamContrller=new StreamController<Map>();
   StreamSink<Map> get inStream=>inStreamContrller.sink;
@@ -20,7 +16,6 @@ class BlocLogin {
 
   login(Map<String,String>m){
     outStreamController.sink.add("正在进行网络请求");
-
     print("login");
     var header = {
       "Authorization": "Basic d2ViQXBwOndlYkFwcA==",
